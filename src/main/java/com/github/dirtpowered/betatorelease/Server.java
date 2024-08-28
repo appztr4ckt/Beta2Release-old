@@ -1,6 +1,5 @@
 package com.github.dirtpowered.betatorelease;
 
-import com.github.dirtpowered.betaprotocollib.data.version.MinecraftVersion;
 import com.github.dirtpowered.betatorelease.configuration.Configuration;
 import com.github.dirtpowered.betatorelease.data.entity.cache.PlayerCache;
 import com.github.dirtpowered.betatorelease.network.codec.PipelineFactory;
@@ -9,9 +8,7 @@ import com.github.dirtpowered.betatorelease.network.session.BetaPlayer;
 import com.github.dirtpowered.betatorelease.network.session.Session;
 import com.github.dirtpowered.betatorelease.proxy.translator.registry.BetaToModernRegistry;
 import com.github.dirtpowered.betatorelease.proxy.translator.registry.ModernToBetaRegistry;
-import com.github.dirtpowered.betatorelease.proxy.translator.registry.b17.B17Registry;
-import com.github.dirtpowered.betatorelease.proxy.translator.registry.b18.B18Registry;
-import com.github.dirtpowered.betatorelease.proxy.translator.registry.b19.B19Registry;
+import com.github.dirtpowered.betatorelease.proxy.translator.registry.TranslatorRegistry;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -47,9 +44,6 @@ public class Server {
     private final EventLoopGroup bossGroup = new NioEventLoopGroup();
     private final EventLoopGroup workerGroup = new NioEventLoopGroup();
 
-    @Getter
-    private final MinecraftVersion version;
-
     public Server() {
         this.server = this;
         this.betaToModernRegistry = new BetaToModernRegistry();
@@ -57,14 +51,9 @@ public class Server {
         this.modernToBetaRegistry = new ModernToBetaRegistry();
         this.playerCache = new PlayerCache();
         this.configuration = new Configuration();
-        this.version = configuration.getVersion();
 
         // inject beta lib packets
-        switch (version) {
-            case B_1_6_6, B_1_7_3 -> new B17Registry(betaToModernRegistry, modernToBetaRegistry).register();
-            case B_1_8_1 -> new B18Registry(betaToModernRegistry, modernToBetaRegistry).register();
-            case B_1_9 -> new B19Registry(betaToModernRegistry, modernToBetaRegistry).register();
-        }
+        new TranslatorRegistry(betaToModernRegistry, modernToBetaRegistry).register();
 
         bind(configuration.getBindAddress(), configuration.getBindPort());
     }
